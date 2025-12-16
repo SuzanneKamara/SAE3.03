@@ -45,19 +45,45 @@ class FlowerView {
   let glow = appCrit.querySelector('[id="background"]');
   glow.style.display.block; 
   }
-  zoomOnAC(){
-    let visibleElements = [];
+//   zoomOnCompetence(competenceId){
+//   //   let visibleElements = [];
   
-  if(window.innerWidth < 600){
-    // Mobile : récupérer tous les éléments visibles
-    visibleElements = this.getVisibleElements();
-    let ACs = visibleElements.filter(el => el.id && el.id.startsWith('AC'));
-    ACs.forEach(ac => {
-      let label = ac.id;
-      ac.style.setProperty('--before-content', `"${label}"`);
-    });
-  }
-  }
+//   // if(window.innerWidth < 600){
+//     // Mobile : récupérer tous les éléments visibles
+//     // visibleElements = this.getVisibleElements();
+//     // let ACs = visibleElements.filter(el => el.id && el.id.startsWith('AC'));
+//     // ACs.forEach(ac => {
+//     //   let label = ac.id;
+//     //   ac.style.setProperty('--before-content', `"${label}"`);
+//     // });
+//   console.log("zoomOnCompetence called with id:", competenceId);
+//     const competence = this.getCompetence(competenceId);
+//   if (!competence) return;
+//    const bbox = competence.getBBox();
+//   const centerX = bbox.x + bbox.width / 2;
+//   const centerY = bbox.y + bbox.height / 2;
+// const svg = this.root;
+//   const svgRect = svg.getBoundingClientRect();
+
+//   // Convertir en pourcentage pour transform-origin
+//   const x = (centerX / bbox.width) * 100;
+//   const y = (centerY / bbox.height) * 100;
+
+//   // Appliquer le zoom centré sur la compétence
+//   svg.style.transformOrigin = `${x}% ${y}%`;
+//   svg.style.transform = 'scale(2)';
+//   }
+  // zoomOnCompetence(){
+   
+  // }
+ 
+resetZoom() {
+  const svg = this.root
+  svg.style.transform = 'scale(1)';
+  svg.style.transformOrigin = 'center';
+}
+
+
   getVisibleElements(){
   // Récupère tous les enfants du root
   const allElements = this.root.querySelectorAll('*');
@@ -73,6 +99,8 @@ class FlowerView {
   
   return visibleElements;
 }
+
+
 
     rotateCircle(){
     let isMouseActive = false;
@@ -104,6 +132,7 @@ class FlowerView {
     
     startRotation();
   }
+  
  
 }
 export { FlowerView, AcView };
