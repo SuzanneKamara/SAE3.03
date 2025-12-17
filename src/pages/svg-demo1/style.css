@@ -102,6 +102,7 @@
   height: 12px;
   /* left: 17px; */
   align-self: center;
+  border:white 1px solid;
   /* position: relative; */
   /* background: linear-gradient(90deg, #00C3FF 0%, white 100%); */
 }
@@ -140,7 +141,7 @@
   left: 50%;
   /* justify-self: center; */
   align-self: center;
-  height: 20rem;
+  /* height: 20rem; */
 
   transform: translate(-50%, -50%);
   background: black;

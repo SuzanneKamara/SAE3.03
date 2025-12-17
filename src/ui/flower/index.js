@@ -13,6 +13,20 @@ class AcView {
   dom() {
     return this.root;
   }
+
+  // uptadeProgressBar(progress){
+  //   // let elt = this.root.querySelector('[id="'+acId+'"]');
+  //   let progressBar = this.root.querySelector('.ac-card__progress-bar');
+  //   // let color = this.getAcColor();
+  //   let rootAc = this.root
+  //   let pourcentage=rootAc.querySelector('.ac-card__percentage');
+  //   console.log(pourcentage);
+  //   pourcentage.textContent=progress + '%';
+  //   progressBar.style.background ="linear-gradient("+progress+",red 0%, white 100%)";
+  
+  //   // progressBar.style.width = progress + '%';
+  //   // progressBar.textContent = progress + '%';
+  // }
 }
 
 class FlowerView {
@@ -45,43 +59,21 @@ class FlowerView {
   let glow = appCrit.querySelector('[id="background"]');
   glow.style.display.block; 
   }
-//   zoomOnCompetence(competenceId){
-//   //   let visibleElements = [];
-  
-//   // if(window.innerWidth < 600){
-//     // Mobile : récupérer tous les éléments visibles
-//     // visibleElements = this.getVisibleElements();
-//     // let ACs = visibleElements.filter(el => el.id && el.id.startsWith('AC'));
-//     // ACs.forEach(ac => {
-//     //   let label = ac.id;
-//     //   ac.style.setProperty('--before-content', `"${label}"`);
-//     // });
-//   console.log("zoomOnCompetence called with id:", competenceId);
-//     const competence = this.getCompetence(competenceId);
-//   if (!competence) return;
-//    const bbox = competence.getBBox();
-//   const centerX = bbox.x + bbox.width / 2;
-//   const centerY = bbox.y + bbox.height / 2;
-// const svg = this.root;
-//   const svgRect = svg.getBoundingClientRect();
 
-//   // Convertir en pourcentage pour transform-origin
-//   const x = (centerX / bbox.width) * 100;
-//   const y = (centerY / bbox.height) * 100;
+  UpdateProgress(ac,color, progress){
+    let appCrit = this.root.querySelector('[id="'+ac+'"]');
+    // let color = appCrit.getAcColor(ac);
+    appCrit.style.fill = `linear-gradient(to right, ${color} ${progress}%, #ddd ${progress}% 100%)`;
+   }
 
-//   // Appliquer le zoom centré sur la compétence
-//   svg.style.transformOrigin = `${x}% ${y}%`;
-//   svg.style.transform = 'scale(2)';
-//   }
-  // zoomOnCompetence(){
-   
-  // }
  
 resetZoom() {
   const svg = this.root
   svg.style.transform = 'scale(1)';
   svg.style.transformOrigin = 'center';
 }
+
+
 
 
   getVisibleElements(){
