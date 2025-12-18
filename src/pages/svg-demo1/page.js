@@ -6,6 +6,7 @@ import template from "./template.html?raw";
 import { gsap } from "gsap";
 import { Animation } from "@/lib/animation.js";
 import { User } from "@/data/user.js";
+import Data from "@/data/data.json";
 
 // modèle de gestion des données
 let M = {};
@@ -62,25 +63,26 @@ M.data = [];
 M.user = null;
 
 M.loadData = async function () {
-  let response = await fetch("/src/data/data.json");
-  M.dataJson = await response.json();
-  M.data = Object.values(M.dataJson);
+  
+  M.data = Data;
+  console.log(M.data);
   return M.data;
 };
 
 M.getAcData = async function (ac) {
   let result = null;
   let data = await M.loadData();
-  // console.log(data);
+  console.log(data);
 
   const match = ac.match(/AC(\d)(\d)/);
 
   const competence = match[2];
   const annee = match[1];
-
-  let Com = data[competence - 1];
+  let comp = M.getCompName(competences[competence - 1]);
+  console.log(comp);
+  // let Com = data[competences[competence - 1]];
   // console.log(Com);
-  let niv = Com.niveaux;
+  let niv = comp.niveaux;
   let niveau = niv[annee - 1];
   let acs = niveau.acs;
   result = acs.find((x) => x.code === ac);
@@ -117,20 +119,35 @@ C.handlerAddToHistoric = async function(ac) {
   historyView.addNotification(data);
 }
 
-// Toggle du dialog de l'historique
-C.historyDialogOpen = false;
+// Vérifier l'état du dialog historique
+C.openCheck = function(dialog, overlay) {
+  if (dialog.classList.contains("active")) {
+    console.log("Dialog historique ouvert");
+  } else {
+    console.log("Dialog historique fermé");
+  }
+};
 
-C.toggleHistoryDialog = function() {
-  const dialog = V.rootPage.querySelector("#history-dialog");
-  if (dialog) {
-    if (C.historyDialogOpen) {
-      dialog.close();
-      C.historyDialogOpen = false;
-    } else {
-      dialog.showModal();
-      V.renderHistory();
-      C.historyDialogOpen = true;
-    }
+// Ouvrir le dialog de l'historique
+C.openHistoryDialog = function() {
+  const dialog = V.historicView.root.querySelector("#history-dialog");
+  const overlay = V.historicView.root.querySelector("#history-overlay");
+  if (dialog && overlay) {
+    dialog.classList.add("active");
+    overlay.classList.add("active");
+    V.renderHistory();
+    C.openCheck(dialog, overlay);
+  }
+};
+
+// Fermer le dialog de l'historique
+C.closeHistoryDialog = function() {
+  const dialog = V.historicView.root.querySelector("#history-dialog");
+  const overlay = V.historicView.root.querySelector("#history-overlay");
+  if (dialog && overlay) {
+    dialog.classList.remove("active");
+    overlay.classList.remove("active");
+    C.openCheck(dialog, overlay);
   }
 };
 
@@ -236,6 +253,66 @@ C.saveFinalProgress = function(acId) {
   }
 }
 
+// créer des boutons d'export et d'import
+C.handlerExport =  function() { 
+  User.export();
+ };
+
+
+//  utilisation d'une boite de dialogue pour sélectionner un fichier JSON à importer
+ C.handlerImportJson = async function(jsonData) {
+  User.import(jsonData);
+ };
+
+C.handlerImportProof = async function(acId, file) {
+  // 1. Valider: type === "application/pdf"
+  if (!file || file.type !== "application/pdf") {
+    alert("Veuillez sélectionner un fichier PDF");
+    return;
+  }
+
+  // 2. Valider la taille (max 10MB)
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (file.size > maxSize) {
+    alert("Le fichier dépasse 10MB. Veuillez choisir un fichier plus petit.");
+    return;
+  }
+
+  // 3. Créer une URL pour le fichier (blob URL)
+  const fileUrl = URL.createObjectURL(file);
+  const uploadDate = new Date().toISOString();
+
+  // 4. Initialiser la structure de preuves si elle n'existe pas
+  if (!User.data.proofs) {
+    User.data.proofs = {};
+  }
+  if (!User.data.proofs[acId]) {
+    User.data.proofs[acId] = [];
+  }
+
+  // 5. Ajouter la preuve à User.data.proofs[acId]
+  const proof = {
+    name: file.name,
+    uploadDate: uploadDate,
+    url: fileUrl,
+    size: (file.size / 1024).toFixed(2) + " KB" // Pour affichage
+  };
+
+  User.data.proofs[acId].push(proof);
+  console.log(`Preuve ajoutée pour ${acId}:`, proof);
+
+  // 6. Mettre à jour l'affichage de la liste des preuves
+  V.displayProofs(acId);
+
+  // 7. Sauvegarder via ProgressStorage
+  ProgressStorage.update(User.data);
+
+  // 8. Notification utilisateur
+  console.log(`✓ Preuve "${file.name}" importée avec succès pour ${acId}`);
+};
+
+
+
 C.init = function () {
   M.loadData();
   M.progress = ProgressStorage.load(); // Charger la progression au démarrage
@@ -269,6 +346,31 @@ V.renderHistory = function() {
   history.forEach(entry => {
     const notif = V.createNotificationElement(entry);
     notificationsList.appendChild(notif);
+
+
+    
+    // Export
+  const exportBtn = document.querySelector("#export-data-btn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", C.handlerExport);
+  }
+  
+  // Import
+  const importBtn = document.querySelector("#import-data-btn");
+  if (importBtn) {
+    importBtn.addEventListener("click", () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".json";
+      input.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        const text = await file.text();
+        const data = JSON.parse(text);
+        C.handlerImportJson(data);
+      });
+      input.click();
+    });
+  }
   });
 };
 
@@ -337,18 +439,20 @@ V.attachEvents = function (root) {
   // Reset au clic du background
   bg.addEventListener("click", C.handlerBackgroundClick(comps, Wall));
 
-  // Événements du dialog historique
-  const historyBtn = root.querySelector("#history-btn-svg");
+  // Événements du dialog historique (chercher dans V.historicView.root)
+  const historicRoot = V.historicView.root;
+  
+  const historyBtn = historicRoot.querySelector("#history-btn-svg");
   if (historyBtn) {
-    historyBtn.addEventListener("click", C.toggleHistoryDialog);
+    historyBtn.addEventListener("click", C.openHistoryDialog);
   }
 
-  const closeBtn = root.querySelector(".sidebar-close");
+  const closeBtn = historicRoot.querySelector(".sidebar-close");
   if (closeBtn) {
-    closeBtn.addEventListener("click", C.toggleHistoryDialog);
+    closeBtn.addEventListener("click", C.closeHistoryDialog);
   }
 
-  const clearBtn = root.querySelector("#clear-history");
+  const clearBtn = historicRoot.querySelector("#clear-history");
   if (clearBtn) {
     clearBtn.addEventListener("click", () => {
       if (confirm("Êtes-vous sûr de vouloir effacer tout l'historique ?")) {
@@ -357,18 +461,10 @@ V.attachEvents = function (root) {
     });
   }
 
-  const dialog = root.querySelector("#history-dialog");
-  if (dialog) {
-    dialog.addEventListener("click", (ev) => {
-      if (ev.target === dialog) {
-        C.toggleHistoryDialog();
-      }
-    });
-    
-    // Mettre à jour l'état quand le dialog se ferme
-    dialog.addEventListener("close", () => {
-      C.historyDialogOpen = false;
-    });
+  // Fermer l'historique en cliquant sur l'overlay
+  const historyOverlay = historicRoot.querySelector("#history-overlay");
+  if (historyOverlay) {
+    historyOverlay.addEventListener("click", C.closeHistoryDialog);
   }
 };
 
@@ -492,10 +588,25 @@ V.renderACDetails = async function (ac) {
       overlay.classList.remove("active");
       popup.classList.remove("active");
     });
-  }
 
+    V.displayProofs(ac); // Afficher les preuves associées à cet AC
 
-};
+    // Gestion du bouton d'import de preuve
+    const importProofBtn = popup.querySelector("#import-proof-btn");
+    if (importProofBtn) {
+      importProofBtn.addEventListener("click", () => {
+        // Créer un input de type fichier
+        const fileInput = document.createElement("input");
+        fileInput.type = "file";
+        fileInput.accept = "application/pdf";
+        fileInput.addEventListener("change", (event) => {
+          const file = event.target.files[0];
+          C.handlerImportProof(ac, file);
+        });
+        fileInput.click();
+      });
+    }
+};}
 
 V.renderHistoric = function(data) {
   let root = V.rootPage;
@@ -505,16 +616,58 @@ V.renderHistoric = function(data) {
   historicSlot.replaceWith(historyView.dom());
 }
 
+V.displayProofs = function(acId) {
+  const proofsList = V.rootPage.querySelector("#proofs-list");
+  if (!proofsList) return;
+
+  const proofs = User.data.proofs?.[acId] || [];
+
+  if (proofs.length === 0) {
+    proofsList.innerHTML = '<p class="empty-proofs">Aucune preuve importée</p>';
+    return;
+  }
+
+  proofsList.innerHTML = proofs
+    .map((proof, index) => `
+      <div class="proof-item">
+        <div class="proof-info">
+          <a href="${proof.url}" target="_blank" class="proof-link">
+             ${proof.name}
+          </a>
+          <small class="proof-meta">
+            ${new Date(proof.uploadDate).toLocaleDateString('fr-FR')} 
+            • ${proof.size}
+          </small>
+        </div>
+        <button class="btn-delete-proof" data-ac="${acId}" data-index="${index}">
+          ✕
+        </button>
+      </div>
+    `)
+    .join("");
+
+  // Attacher les événements de suppression
+  proofsList.querySelectorAll(".btn-delete-proof").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      const ac = e.target.dataset.ac;
+      const idx = parseInt(e.target.dataset.index);
+      User.data.proofs[ac].splice(idx, 1);
+      ProgressStorage.update(User.data);
+      V.displayProofs(ac);
+    });
+  });
+};
+
 V.init = function () {
   V.rootPage = htmlToDOM(template);
   V.flowers = new FlowerView();
   V.popupAC = new AcView();
-  const historicView = new HistoricView();
+  V.historicView = new HistoricView();
   
   // Injecter le templateHistoric dans le slot
   const historicSlot = V.rootPage.querySelector('slot[name="historic"]');
   if (historicSlot) {
-    historicSlot.replaceWith(historicView.dom());
+    historicSlot.replaceWith(V.historicView.dom());
   }
   
   // V.rootPage.zoomOnAC;

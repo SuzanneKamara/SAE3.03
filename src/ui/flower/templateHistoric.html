@@ -1,318 +1,54 @@
 <div class="historic-container">
+  <!-- Overlay Historique -->
+  <div class="history-overlay" id="history-overlay"></div>
+
   <!-- Bouton Historique -->
   <button class="history-trigger" id="history-btn-svg">Historique</button>
 
-  <!-- Dialog Historique (Menu latéral) -->
-  <dialog class="history-dialog" id="history-dialog">
-  <div class="sidebar-header">
-    <h2>Historique</h2>
-    <button class="sidebar-close" aria-label="Fermer">✕</button>
-  </div>
-
-  <div class="sidebar-content">
-    <div class="notifications-list" id="notifications-list">
-      <!-- Les notifications seront insérées dynamiquement ici -->
-      <p class="empty-state">Aucune modification enregistrée</p>
+  <!-- Menu latéral Historique -->
+  <div class="history-dialog" id="history-dialog">
+    <div class="sidebar-header">
+      <h2>Historique</h2>
+      <button class="sidebar-close" aria-label="Fermer">✕</button>
     </div>
-  </div>
 
-  <div class="sidebar-footer">
-    <button class="btn-clear" id="clear-history">Effacer l'historique</button>
-  </div>
-</dialog>
-
-<!-- Template pour une notification (clonage) -->
-<template id="notification-template">
-  <div class="notification-item">
-    <div class="notification-header">
-      <span class="notification-ac-code">{{acCode}}</span>
-      <span class="notification-date">{{date}}</span>
-    </div>
-    
-    <div class="notification-body">
-      <p class="notification-title">{{acName}}</p>
-      
-      <div class="notification-progress">
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: {{progress}}%"></div>
-        </div>
-        <span class="progress-percentage">{{progress}}%</span>
+    <div class="sidebar-content">
+      <div class="notifications-list" id="notifications-list">
+        <!-- Les notifications seront insérées dynamiquement ici -->
+        <p class="empty-state">Aucune modification enregistrée</p>
       </div>
     </div>
-    
-    <div class="notification-footer">
-      <span class="notification-competence" style="background-color: {{color}}">{{competence}}</span>
+
+    <div class="sidebar-footer">
+      <button class="btn-action" id="export-history-btn">💾 Exporter</button>
+      <button class="btn-action" id="import-history-btn">📂 Importer</button>
+      <button class="btn-clear" id="clear-history">Effacer l'historique</button>
     </div>
   </div>
-</template>
 
-<style>
-  /* Bouton Historique */
-  .history-trigger {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 10px 20px;
-    background-color: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: background-color 0.3s, box-shadow 0.3s;
-    z-index: 99;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .history-trigger:hover {
-    background-color: #2563eb;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  /* Dialog Historique - Menu Burger Latéral */
-  .history-dialog {
-    position: fixed;
-    right: 0;
-    top: 0;
-    width: 350px;
-    height: 100vh;
-    border: none;
-    border-radius: 0;
-    padding: 0;
-    margin: 0;
-    box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
-    animation: slideInRight 0.3s ease-out;
-    display: flex;
-    flex-direction: column;
-    background-color: white;
-  }
-
-  .history-dialog[open] {
-    display: flex;
-  }
-
-  @keyframes slideInRight {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideOutRight {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-  }
-
-  .history-dialog.closing {
-    animation: slideOutRight 0.3s ease-in;
-  }
-
-  .history-dialog::backdrop {
-    background-color: rgba(0, 0, 0, 0.3);
-  }
-
-  /* Sidebar Header */
-  .sidebar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #e5e7eb;
-    background-color: #f9fafb;
-    flex-shrink: 0;
-  }
-
-  .sidebar-header h2 {
-    margin: 0;
-    font-size: 18px;
-    color: #1f2937;
-  }
-
-  .sidebar-close {
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: #6b7280;
-    cursor: pointer;
-    padding: 4px 8px;
-    transition: color 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .sidebar-close:hover {
-    color: #1f2937;
-  }
-
-  /* Sidebar Content */
-  .sidebar-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px;
-  }
-
-  .empty-state {
-    text-align: center;
-    color: #9ca3af;
-    padding: 40px 20px;
-    font-size: 13px;
-  }
-
-  /* Notifications List */
-  .notifications-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  /* Notification Item */
-  .notification-item {
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 12px;
-    background-color: #ffffff;
-    transition: box-shadow 0.2s;
-  }
-
-  .notification-item:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .notification-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-  }
-
-  .notification-ac-code {
-    font-weight: 600;
-    color: #1f2937;
-    font-size: 13px;
-  }
-
-  .notification-date {
-    font-size: 11px;
-    color: #9ca3af;
-  }
-
-  .notification-body {
-    margin-bottom: 10px;
-  }
-
-  .notification-title {
-    margin: 0;
-    font-size: 12px;
-    color: #6b7280;
-    line-height: 1.4;
-  }
-
-  /* Progress Bar */
-  .notification-progress {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 6px;
-  }
-
-  .progress-bar {
-    flex: 1;
-    height: 5px;
-    background-color: #e5e7eb;
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #3b82f6, #10b981);
-    transition: width 0.3s ease;
-  }
-
-  .progress-percentage {
-    font-size: 11px;
-    font-weight: 500;
-    color: #1f2937;
-    min-width: 30px;
-    text-align: right;
-  }
-
-  .notification-footer {
-    display: flex;
-    gap: 6px;
-  }
-
-  .notification-competence {
-    display: inline-block;
-    padding: 3px 6px;
-    border-radius: 3px;
-    font-size: 10px;
-    font-weight: 500;
-    color: white;
-  }
-
-  /* Sidebar Footer */
-  .sidebar-footer {
-    padding: 16px 20px;
-    border-top: 1px solid #e5e7eb;
-    background-color: #f9fafb;
-    flex-shrink: 0;
-  }
-
-  .btn-clear {
-    width: 100%;
-    padding: 10px 16px;
-    background-color: #ef4444;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: background-color 0.2s;
-  }
-
-  .btn-clear:hover {
-    background-color: #dc2626;
-  }
-
-  /* Scrollbar personnalisée */
-  .sidebar-content::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .sidebar-content::-webkit-scrollbar-track {
-    background: #f1f5f9;
-  }
-
-  .sidebar-content::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-  }
-
-  .sidebar-content::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
-  }
-
-  /* Responsive */
-  @media (max-width: 480px) {
-    .history-dialog {
-      width: 100%;
-      max-width: 100%;
-    }
-  }
-</style>
+  <!-- Template pour une notification (clonage) -->
+  <template id="notification-template">
+    <div class="notification-item">
+      <div class="notification-header">
+        <span class="notification-ac-code">{{acCode}}</span>
+        <span class="notification-date">{{date}}</span>
+      </div>
+      
+      <div class="notification-body">
+        <p class="notification-title">{{acName}}</p>
+        
+        <div class="notification-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: {{progress}}%"></div>
+          </div>
+          <span class="progress-percentage">{{progress}}%</span>
+        </div>
+      </div>
+      
+      <div class="notification-footer">
+        <span class="notification-competence" style="background-color: {{color}}">{{competence}}</span>
+      </div>
+    </div>
+  </template>
 
 </div>

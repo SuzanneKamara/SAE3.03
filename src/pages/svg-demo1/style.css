@@ -178,3 +178,314 @@ svg {
 svg::-webkit-scrollbar {
   display: none;
 }
+
+/* ============= HISTORIQUE POPUP ============= */
+
+/* Bouton Historique */
+.history-trigger {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  background-color: #00c3ff;
+  color: #001a22;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Lexend Deca", sans-serif;
+  transition: background-color 0.3s, box-shadow 0.3s;
+  z-index: 99;
+  box-shadow: 0 2px 8px rgba(0, 195, 255, 0.2);
+}
+
+/* Overlay Historique */
+.history-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 98;
+}
+
+.history-overlay.active {
+  display: block;
+}
+
+/* Dialog Historique - Menu Burger Latéral */
+.history-dialog {
+  display: none;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 350px;
+  height: 100vh;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
+  animation: slideInRight 0.3s ease-out;
+  flex-direction: column;
+  background-color: #001a22;
+  color: white;
+  z-index: 100;
+}
+
+.history-dialog.active {
+  display: flex;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.history-dialog.closing {
+  animation: slideOutRight 0.3s ease-in;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #00c3ff;
+  background-color: #0a2f3f;
+  flex-shrink: 0;
+}
+
+.sidebar-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #00c3ff;
+  font-family: "Lexend Deca", sans-serif;
+  font-weight: 500;
+}
+
+.sidebar-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #00c3ff;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-close:hover {
+  color: #ffffff;
+}
+
+/* Sidebar Content */
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #666;
+  padding: 40px 20px;
+  font-size: 13px;
+  font-family: "Lexend Deca", sans-serif;
+}
+
+/* Notifications List */
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Notification Item */
+.notification-item {
+  border: 1px solid #00c3ff;
+  border-radius: 4px;
+  padding: 12px;
+  background-color: #0a2f3f;
+  transition: box-shadow 0.2s;
+  font-family: "Lexend Deca", sans-serif;
+}
+
+.notification-item:hover {
+  box-shadow: 0 2px 8px rgba(0, 195, 255, 0.3);
+  background-color: #124456;
+}
+
+.notification-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.notification-ac-code {
+  font-weight: 600;
+  color: #00c3ff;
+  font-size: 13px;
+  font-family: "Lexend Deca", sans-serif;
+}
+
+.notification-date {
+  font-size: 11px;
+  color: #888;
+  font-family: "Lexend Deca", sans-serif;
+}
+
+.notification-body {
+  margin-bottom: 10px;
+}
+
+.notification-title {
+  margin: 0;
+  font-size: 12px;
+  color: #ccc;
+  line-height: 1.4;
+  font-family: "Lexend Deca", sans-serif;
+}
+
+/* Progress Bar */
+.notification-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 5px;
+  background-color: #0a2f3f;
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid #00c3ff;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00c3ff, #00ff88);
+  transition: width 0.3s ease;
+}
+
+.progress-percentage {
+  font-size: 11px;
+  font-weight: 500;
+  color: #00c3ff;
+  min-width: 30px;
+  text-align: right;
+  font-family: "Lexend Deca", sans-serif;
+}
+
+.notification-footer {
+  display: flex;
+  gap: 6px;
+}
+
+.notification-competence {
+  display: inline-block;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 500;
+  color: white;
+  font-family: "Lexend Deca", sans-serif;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #00c3ff;
+  background-color: #0a2f3f;
+  flex-shrink: 0;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+}
+
+.btn-clear,
+.btn-action {
+  padding: 10px 16px;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: "Lexend Deca", sans-serif;
+  transition: background-color 0.2s;
+  flex: 1;
+}
+
+.btn-clear {
+  background-color: #d32f2f;
+  border: 1px solid #d32f2f;
+}
+
+.btn-clear:hover {
+  background-color: #b71c1c;
+  border-color: #b71c1c;
+}
+
+.btn-action {
+  background-color: transparent;
+  border: 1px solid #00c3ff;
+  color: #00c3ff;
+}
+
+.btn-action:hover {
+  background-color: #00c3ff;
+  color: #001a22;
+}
+
+/* Scrollbar personnalisée */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: #0a2f3f;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background: #00c3ff;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background: #00ff88;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .history-dialog {
+    width: 100%;
+    max-width: 100%;
+  }
+}
