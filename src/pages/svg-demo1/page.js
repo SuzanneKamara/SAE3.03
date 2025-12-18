@@ -236,8 +236,13 @@ C.handlerUpdateProgress = function(ev,id,color) {
   // Tracker la valeur actuelle
   C.sliderValueTracker[id] = levelProgress;
   
-  // Mise à jour visuelle SEULEMENT
-  V.flowers.UpdateProgress(id, color, levelProgress);
+  // Vérifier que l'élément AC existe avant d'animer
+  const acElement = V.rootPage.querySelector("#" + id.replace(/\./g, '\\.'));
+  if (acElement) {
+    // Mise à jour visuelle SEULEMENT
+    V.flowers.UpdateProgress(id, color, levelProgress);
+  }
+  
   C.updateProgBarVisual(color, levelProgress);
   
   // Mettre à jour l'affichage du pourcentage en temps réel
@@ -253,6 +258,7 @@ C.saveFinalProgress = function(acId) {
   if (finalValue !== undefined && finalValue !== null) {
     User.updateAcProgress(acId, finalValue);
     V.renderHistory(); // Mettre à jour l'affichage de l'historique
+    C.applyProgressGradients(); // Mettre à jour les dégradés de progression
     let comp = M.getComp(acId);
     C.checkLevelCompletion(comp); // Vérifier si un niveau est complété
     delete C.sliderValueTracker[acId];
@@ -407,6 +413,81 @@ C.removeGlowEffect = function(niveau) {
   console.log(`✗ Glow effect retiré pour ${niveau}`);
 };
 
+// Appliquer les dégradés de progression sur les ACs
+C.applyProgressGradients = function() {
+  // Créer ou récupérer la section <defs> du SVG pour les dégradés
+  const svgElement = V.rootPage.querySelector('svg');
+  let defs = svgElement.querySelector('defs');
+  
+  if (!defs) {
+    defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    svgElement.insertBefore(defs, svgElement.firstChild);
+  }
+  
+  // Parcourir tous les AC et appliquer le dégradé
+  const acElements = V.rootPage.querySelectorAll('[id^="AC"]');
+  
+  acElements.forEach(acElement => {
+    const acId = acElement.id;
+    
+    // Ignorer les containers et les backgrounds
+    if (acId.includes('container') || acId.includes('background')) {
+      return;
+    }
+    
+    // Récupérer la progression actuelle de cet AC
+    const progress = User.getAcProgress(acId) || 0;
+    
+    // Récupérer la couleur de la compétence basée sur le numéro du AC
+    const color = M.getColor(acId);
+    
+    // Créer un ID safe pour le gradient (remplacer les points par des tirets)
+    const gradientId = `gradient_${acId.replace(/\./g, '_')}`;
+    
+    // Chercher ou créer le gradient
+    let gradient = Array.from(defs.children).find(el => el.getAttribute('id') === gradientId);
+    
+    if (!gradient) {
+      gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+      gradient.setAttribute('id', gradientId);
+      gradient.setAttribute('x1', '0%');
+      gradient.setAttribute('y1', '0%');
+      gradient.setAttribute('x2', '100%');
+      gradient.setAttribute('y2', '0%');
+      defs.appendChild(gradient);
+    }
+    
+    // Vider et recréer les stops du gradient
+    gradient.innerHTML = '';
+    
+    // Stop 1: Couleur de la compétence au début
+    const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    stop1.setAttribute('offset', '0%');
+    stop1.setAttribute('stop-color', color);
+    stop1.setAttribute('stop-opacity', '1');
+    gradient.appendChild(stop1);
+    
+    // Stop 2: Transition à la progression actuelle
+    const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    stop2.setAttribute('offset', progress + '%');
+    stop2.setAttribute('stop-color', color);
+    stop2.setAttribute('stop-opacity', '1');
+    gradient.appendChild(stop2);
+    
+    // Stop 3: Noir à partir de la progression actuelle jusqu'à 100%
+    const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+    stop3.setAttribute('offset', progress + '%');
+    stop3.setAttribute('stop-color', '#000000');
+    stop3.setAttribute('stop-opacity', '1');
+    gradient.appendChild(stop3);
+    
+    // Appliquer le dégradé au fill de l'AC
+    acElement.setAttribute('fill', `url(#${gradientId})`);
+    
+    console.log(`✓ Dégradé appliqué pour ${acId} (progression: ${progress}%)`);
+  });
+};
+
 // créer des boutons d'export et d'import
 C.handlerExport =  function() { 
   User.export();
@@ -423,6 +504,9 @@ C.handlerExport =  function() {
   
   // Mettre à jour l'affichage de l'historique
   V.renderHistory();
+  
+  // Mettre à jour les dégradés de progression
+  C.applyProgressGradients();
   
   // Mettre à jour les glows effects avec les nouvelles données
   competences.forEach((compId) => {
@@ -512,6 +596,9 @@ C.init = async function () {
   competences.forEach((compId) => {
     C.checkLevelCompletion(compId);
   });
+  
+  // Appliquer les dégradés de progression sur les ACs
+  C.applyProgressGradients();
   
   return root;
 };
