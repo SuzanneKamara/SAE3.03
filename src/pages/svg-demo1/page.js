@@ -52,9 +52,13 @@ M.getLevel = function (ac) {
   return level;
 }
 
+M.getCompShortName = function (competence) {
+  let data = M.getCompData(competence);
+  return data.nom_court;}
 
-M.getCompName = function (competence) {
-  console.log(M.data);
+// a modifier
+M.getCompData = function (competence) {
+  // console.log(M.data);
   let comp = M.data[competence];
   return comp;
 };
@@ -65,21 +69,21 @@ M.user = null;
 M.loadData = async function () {
   
   M.data = Data;
-  console.log(M.data);
+  // console.log(M.data);
   return M.data;
 };
 
 M.getAcData = async function (ac) {
   let result = null;
   let data = await M.loadData();
-  console.log(data);
+  // console.log(data);
 
   const match = ac.match(/AC(\d)(\d)/);
 
   const competence = match[2];
   const annee = match[1];
-  let comp = M.getCompName(competences[competence - 1]);
-  console.log(comp);
+  let comp = M.getCompData(competences[competence - 1]);
+  // console.log(comp);
   // let Com = data[competences[competence - 1]];
   // console.log(Com);
   let niv = comp.niveaux;
@@ -249,9 +253,159 @@ C.saveFinalProgress = function(acId) {
   if (finalValue !== undefined && finalValue !== null) {
     User.updateAcProgress(acId, finalValue);
     V.renderHistory(); // Mettre à jour l'affichage de l'historique
+    let comp = M.getComp(acId);
+    C.checkLevelCompletion(comp); // Vérifier si un niveau est complété
     delete C.sliderValueTracker[acId];
   }
 }
+
+// Vérifier si un niveau est complété (65%)
+C.checkLevelCompletion = function(competenceId) {
+  const annees = ["BUT1", "BUT2", "BUT3"];
+  
+  // S'assurer que User.data et completedLevels existent
+  if (!User.data) return; // Ne pas créer de nouvelles données vides
+  
+  if (!User.data.completedLevels) {
+    User.data.completedLevels = {};
+  }
+  
+  annees.forEach(annee => {
+    const averageProgress = C.calculateCompLevelAverage(competenceId, annee);
+    
+    console.log(`Moyenne ${annee}:`, averageProgress + "%");
+    
+    // Créer une clé unique pour cette compétence et ce niveau
+    const levelKey = competenceId + "_" + annee;
+    
+    // Si la moyenne atteint 65%, marquer comme complété
+    if (averageProgress >= 65) {
+      User.data.completedLevels[levelKey] = true;
+      C.activateGlowEffect(annee);
+      console.log(`✓ Niveau ${annee} marqué comme complété pour ${competenceId}`);
+    } else {
+      // Si en dessous de 65%, retirer du marquage
+      delete User.data.completedLevels[levelKey];
+      C.removeGlowEffect(annee);
+      console.log(`✗ Niveau ${annee} marqué comme non-complété pour ${competenceId}`);
+    }
+  });
+  
+  // Sauvegarder l'état dans localStorage
+  ProgressStorage.update(User.data);
+};
+C.calculateCompLevelAverage = function(competenceId, niveau) {
+  // Récupérer tous les AC du niveau depuis les données de compétence
+  const match = niveau.match(/BUT(\d)/);
+  const level = match[1];
+  
+  // Utiliser les données de M.data pour les AC disponibles
+  let compAc = [];
+  const compData = M.getCompData(competenceId);
+  
+  if (compData && compData.niveaux && compData.niveaux[level - 1]) {
+    let levelData = compData.niveaux[level - 1];
+    compAc = levelData.acs || [];
+  }
+  
+  if (compAc.length === 0) return 0;
+  
+  // Calculer la moyenne en utilisant les ACs progressions de User.data
+  let totalProgress = 0;
+  let acCount = 0;
+  
+  compAc.forEach(ac => {
+    const progress = User.getAcProgress(ac.code) || 0;
+    totalProgress += progress;
+    acCount++;
+  });
+  
+  return acCount > 0 ? Math.round(totalProgress / acCount) : 0;
+}
+// Calculer la moyenne de progression pour un niveau
+// C.calculateLevelAverage = function(niveau) {
+//   // Récupérer tous les AC du niveau
+//   const match = niveau.match(/BUT(\d)/);
+//   const level = match[1];
+  
+//   let totalProgress = 0;
+//   let acCount = 0;
+  
+//   // Parcourir les 5 compétences
+//   competences.forEach((compId) => {
+//     for (let i = 1; i <= 5; i++) {
+//       const acId = "AC" + level + i;
+//       const progress = User.getAcProgress(acId) || 0;
+//       totalProgress += progress;
+//       acCount++;
+//     }
+//   });
+  
+//   return acCount > 0 ? Math.round(totalProgress / acCount) : 0;
+// };
+
+// Activer l'effet glow pour un niveau complété
+C.activateGlowEffect = function(niveau) {
+  // Noms des compétences SVG
+  const competenceNames = [
+    "Entreprendre",
+    "Développer", 
+    "Exprimer",
+    "Concevoir",
+    "Comprendre"
+  ];
+  
+  const levelNum = niveau.match(/BUT(\d)/)[1];
+  
+  competenceNames.forEach((compName, index) => {
+    const groupComp = V.rootPage.querySelector("#" + compName);
+    if (!groupComp) return;
+    
+    const group = groupComp.querySelector("#" + niveau);
+    
+    if (group) {
+      // Récupérer la couleur de cette compétence
+      const acId = "AC" + levelNum + (index + 1);
+      const color = M.getColor(acId);
+      
+      // 1. Sélectionner les éléments background et les rendre visibles
+      const backgroundElements = group.querySelectorAll("[id^=background]");
+      backgroundElements.forEach(el => {
+        el.style.display = "block";
+        el.style.opacity = "1";
+        el.classList.add("glow-effect");
+        el.style.setProperty('--glow-color', color);
+      });
+      
+      // 2. Appliquer le glow également sur tous les AC de cette compétence dans ce niveau
+      for (let i = 1; i <= 5; i++) {
+        const acElement = V.rootPage.querySelector("#AC" + levelNum + i);
+        if (acElement) {
+          acElement.classList.add("glow-effect");
+          acElement.style.setProperty('--glow-color', M.getColor("AC" + levelNum + i));
+        }
+      }
+      
+      console.log(`✓ Glow effect persistant activé pour ${compName} ${niveau} avec couleur ${color} (${backgroundElements.length} éléments)`);
+    }
+  });
+};
+
+// Retirer l'effet glow pour un niveau non complété
+C.removeGlowEffect = function(niveau) {
+  const levelNum = niveau.match(/BUT(\d)/)[1];
+  
+  // Retirer le glow de tous les AC de ce niveau
+  for (let i = 1; i <= 5; i++) {
+    const acElement = V.rootPage.querySelector("#AC" + levelNum + i);
+    if (acElement) {
+      acElement.classList.remove("glow-effect");
+      acElement.style.removeProperty('--glow-color');
+    }
+  }
+  
+  console.log(`✗ Glow effect retiré pour ${niveau}`);
+};
 
 // créer des boutons d'export et d'import
 C.handlerExport =  function() { 
@@ -269,6 +423,11 @@ C.handlerExport =  function() {
   
   // Mettre à jour l'affichage de l'historique
   V.renderHistory();
+  
+  // Mettre à jour les glows effects avec les nouvelles données
+  competences.forEach((compId) => {
+    C.checkLevelCompletion(compId);
+  });
   
   console.log("✓ Données importées avec succès", User.data);
   alert("Données importées avec succès!");
@@ -323,12 +482,38 @@ C.handlerImportProof = async function(acId, file) {
 
 
 
-C.init = function () {
+C.init = async function () {
   M.loadData();
   M.progress = ProgressStorage.load(); // Charger la progression au démarrage
-  M.user = User.load();
-  return V.init();
+  await User.load(); // ATTENDRE que les données soient chargées
   
+  // Initialiser la page et ses éléments SVG d'abord
+  let root = V.init();
+  
+  // S'assurer que la structure completedLevels existe (sans écraser les données)
+  if (User.data && !User.data.completedLevels) {
+    User.data.completedLevels = {};
+  }
+  
+  // Vérifier que User.data existe
+  if (User.data && User.data.completedLevels) {
+    Object.keys(User.data.completedLevels).forEach(levelKey => {
+      if (User.data.completedLevels[levelKey]) {
+        // Extraire le niveau de la clé (ex: "688548e4666873aa7a49491ba88a7271_BUT1" -> "BUT1")
+        const niveau = levelKey.split("_")[1];
+        C.activateGlowEffect(niveau);
+        console.log(`✓ Glow restauré pour niveau ${niveau}`);
+      }
+    });
+  }
+  
+  // Vérifier et mettre à jour les niveaux complétés (après que V.rootPage soit initialisé)
+  // Les appeler directement sans attendre M.data car les ACs progressions sont dans User.data
+  competences.forEach((compId) => {
+    C.checkLevelCompletion(compId);
+  });
+  
+  return root;
 };
 // C.handlerUpdateProgress = function(ev) {
 //   }
@@ -591,7 +776,7 @@ V.renderACDetails = async function (ac) {
   popup.style.outline = "5px solid " + color;
   // gestion des events
    let competenceId = M.getCompPos(ac)   ;
-   let competenceName = M.getCompName(competenceId);
+   let competenceName = M.getCompData(competenceId);
   //  console.log(competenceId);
    let user = await M.user;
    

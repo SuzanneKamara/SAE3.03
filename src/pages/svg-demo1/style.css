@@ -179,6 +179,28 @@ svg::-webkit-scrollbar {
   display: none;
 }
 
+/* ============= GLOW EFFECT ============= */
+.glow-effect {
+  --glow-color: #00c3ff; /* couleur par défaut */
+  animation: glow-pulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px var(--glow-color));
+}
+
+@keyframes glow-pulse {
+  0% {
+    filter: drop-shadow(0 0 8px var(--glow-color));
+    opacity: 1;
+  }
+  50% {
+    filter: drop-shadow(0 0 16px var(--glow-color));
+    opacity: 0.9;
+  }
+  100% {
+    filter: drop-shadow(0 0 8px var(--glow-color));
+    opacity: 1;
+  }
+}
+
 /* ============= HISTORIQUE POPUP ============= */
 
 /* Bouton Historique */
