@@ -261,7 +261,17 @@ C.handlerExport =  function() {
 
 //  utilisation d'une boite de dialogue pour sélectionner un fichier JSON à importer
  C.handlerImportJson = async function(jsonData) {
-  User.import(jsonData);
+  // Remplacer complètement User.data par les données importées
+  User.data = jsonData;
+  
+  // Sauvegarder dans localStorage
+  ProgressStorage.update(User.data);
+  
+  // Mettre à jour l'affichage de l'historique
+  V.renderHistory();
+  
+  console.log("✓ Données importées avec succès", User.data);
+  alert("Données importées avec succès!");
  };
 
 C.handlerImportProof = async function(acId, file) {
@@ -458,6 +468,31 @@ V.attachEvents = function (root) {
       if (confirm("Êtes-vous sûr de vouloir effacer tout l'historique ?")) {
         V.clearHistory();
       }
+    });
+  }
+
+  // Export des données
+  const exportHistoryBtn = historicRoot.querySelector("#export-history-btn");
+  if (exportHistoryBtn) {
+    exportHistoryBtn.addEventListener("click", C.handlerExport);
+  }
+
+  // Import des données
+  const importHistoryBtn = historicRoot.querySelector("#import-history-btn");
+  if (importHistoryBtn) {
+    importHistoryBtn.addEventListener("click", () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".json";
+      input.addEventListener("change", async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          C.handlerImportJson(data);
+        }
+      });
+      input.click();
     });
   }
 
