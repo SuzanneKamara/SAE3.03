@@ -1,5 +1,5 @@
 // imports
-import { FlowerView, AcView } from "@/ui/flower";
+import { FlowerView, AcView, HistoricView } from "@/ui/flower";
 import { htmlToDOM } from "@/lib/utils.js";
 import { ProgressStorage } from "@/data/progressStorage.js";
 import template from "./template.html?raw";
@@ -91,7 +91,7 @@ M.getAcData = async function (ac) {
 
 M.getAcProg = function(ac) {
   // let user = M.user;
-  
+  console.log(User.getAcProgress(ac));
   return User.getAcProgress(ac);
 }
 // gestion progression utilisateur
@@ -105,8 +105,34 @@ M.getProgress = function (ac)
   return result;
 };
 
+M.getHistoricData =async function(ac) {
+  const notifData = await User.getACNotificationData(ac);
+return notifData;
+}
+
 // contrôleur de la page
 let C = {};
+C.handlerAddToHistoric = async function(ac) {
+  let data = await M.getHistoricData(ac);
+  historyView.addNotification(data);
+}
+
+// Toggle du dialog de l'historique
+C.historyDialogOpen = false;
+
+C.toggleHistoryDialog = function() {
+  const dialog = V.rootPage.querySelector("#history-dialog");
+  if (dialog) {
+    if (C.historyDialogOpen) {
+      dialog.close();
+      C.historyDialogOpen = false;
+    } else {
+      dialog.showModal();
+      V.renderHistory();
+      C.historyDialogOpen = true;
+    }
+  }
+};
 
 C.handler_clickAC = function (ev) {
   if (ev.target.id.startsWith("AC")) {
@@ -177,22 +203,37 @@ C.updateProgBarVisual = function( color,currentProgress) {
   popup.classList.add("active");
 }
 
-// s'execute à la mise à jour du slider du composant ACDetails
-// 
+// Tracker la dernière valeur du slider (pas de sauvegarde immédiate)
+C.sliderValueTracker = {};
+
+// S'execute à la mise à jour du slider du composant ACDetails
+// (mise à jour visuelle seulement, pas d'enregistrement)
 C.handlerUpdateProgress = function(ev,id,color) {
   console.log("Handler update progress bar called", id);
- let levelProgress= parseInt(ev.target.value);
-  // let root = ;
-  // Mettre à jour la barre de progression visuelle
+  let levelProgress = parseInt(ev.target.value);
   
-  // V.popupAC.uptadeProgressBar(levelProgress);
-  // let levelProgress = M.getProgress(ev.target.id);
-  // let color = M.getColor(id);
-  V.flowers.UpdateProgress(id,color, levelProgress);
-  User.updateAcProgress(id, levelProgress);
-  C.updateProgBarVisual( color,levelProgress);
-  console.log(User.getAcProgress(id));
+  // Tracker la valeur actuelle
+  C.sliderValueTracker[id] = levelProgress;
   
+  // Mise à jour visuelle SEULEMENT
+  V.flowers.UpdateProgress(id, color, levelProgress);
+  C.updateProgBarVisual(color, levelProgress);
+  
+  // Mettre à jour l'affichage du pourcentage en temps réel
+  const percentageDisplay = V.rootPage.querySelector('.ac-card__percentage');
+  if (percentageDisplay) {
+    percentageDisplay.textContent = levelProgress + '%';
+  }
+};
+
+// Sauvegarder la progression quand le popup se ferme
+C.saveFinalProgress = function(acId) {
+  const finalValue = C.sliderValueTracker[acId];
+  if (finalValue !== undefined && finalValue !== null) {
+    User.updateAcProgress(acId, finalValue);
+    V.renderHistory(); // Mettre à jour l'affichage de l'historique
+    delete C.sliderValueTracker[acId];
+  }
 }
 
 C.init = function () {
@@ -211,7 +252,67 @@ let V = {
   flowers: null,
 };
 
+// Rendu de l'historique
+V.renderHistory = function() {
+  const notificationsList = V.rootPage.querySelector("#notifications-list");
+  const history = User.getHistorySorted();
 
+  // Vider la liste
+  notificationsList.innerHTML = '';
+
+  if (history.length === 0) {
+    notificationsList.innerHTML = '<p class="empty-state">Aucune modification enregistrée</p>';
+    return;
+  }
+
+  // Rendre chaque notification
+  history.forEach(entry => {
+    const notif = V.createNotificationElement(entry);
+    notificationsList.appendChild(notif);
+  });
+};
+
+// Effacer l'historique
+V.clearHistory = function() {
+  User.clearHistory();
+  V.renderHistory();
+  console.log("Historique effacé");
+};
+
+// Créer un élément de notification à partir du template
+V.createNotificationElement = function(entry) {
+  const template = V.rootPage.querySelector("#notification-template");
+  const clone = template.content.cloneNode(true);
+
+  // Remplir les éléments du template
+  const acCodeEl = clone.querySelector(".notification-ac-code");
+  const dateEl = clone.querySelector(".notification-date");
+  const titleEl = clone.querySelector(".notification-title");
+  const progressFill = clone.querySelector(".progress-fill");
+  const progressPercentage = clone.querySelector(".progress-percentage");
+  const competenceBadge = clone.querySelector(".notification-competence");
+
+  // Formater la date
+  const dateObj = new Date(entry.date);
+  const formattedDate = dateObj.toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  // Assigner les données
+  acCodeEl.textContent = entry.acId;
+  dateEl.textContent = formattedDate;
+  titleEl.textContent = entry.libelle;
+  progressFill.style.width = entry.progress + '%';
+  progressPercentage.textContent = entry.progress + '%';
+  competenceBadge.textContent = entry.competence;
+  competenceBadge.style.backgroundColor = entry.color;
+
+  return clone;
+};
 
 V.attachEvents = function (root) {
   root.addEventListener("click", C.handler_clickAC);
@@ -236,7 +337,39 @@ V.attachEvents = function (root) {
   // Reset au clic du background
   bg.addEventListener("click", C.handlerBackgroundClick(comps, Wall));
 
-  
+  // Événements du dialog historique
+  const historyBtn = root.querySelector("#history-btn-svg");
+  if (historyBtn) {
+    historyBtn.addEventListener("click", C.toggleHistoryDialog);
+  }
+
+  const closeBtn = root.querySelector(".sidebar-close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", C.toggleHistoryDialog);
+  }
+
+  const clearBtn = root.querySelector("#clear-history");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      if (confirm("Êtes-vous sûr de vouloir effacer tout l'historique ?")) {
+        V.clearHistory();
+      }
+    });
+  }
+
+  const dialog = root.querySelector("#history-dialog");
+  if (dialog) {
+    dialog.addEventListener("click", (ev) => {
+      if (ev.target === dialog) {
+        C.toggleHistoryDialog();
+      }
+    });
+    
+    // Mettre à jour l'état quand le dialog se ferme
+    dialog.addEventListener("close", () => {
+      C.historyDialogOpen = false;
+    });
+  }
 };
 
 // V.attachPopupEvents = function (root) {
@@ -318,8 +451,7 @@ V.renderACDetails = async function (ac) {
   overlay.addEventListener("click", () => {
     overlay.classList.remove("active");
     popup.classList.remove("active");
-
-    
+    C.saveFinalProgress(ac); // Sauvegarder la progression finale
   });
 
 
@@ -356,6 +488,7 @@ V.renderACDetails = async function (ac) {
   const closeBtn = popup.querySelector(".popup__close");
   if (closeBtn) {
     closeBtn.addEventListener("click", () => {
+      C.saveFinalProgress(ac); // Sauvegarder la progression finale
       overlay.classList.remove("active");
       popup.classList.remove("active");
     });
@@ -364,10 +497,26 @@ V.renderACDetails = async function (ac) {
 
 };
 
+V.renderHistoric = function(data) {
+  let root = V.rootPage;
+  let historyView = new HistoricView();
+  historyView.addNotification(data);
+  let historicSlot = root.querySelector('div[name="historic"]');
+  historicSlot.replaceWith(historyView.dom());
+}
+
 V.init = function () {
   V.rootPage = htmlToDOM(template);
   V.flowers = new FlowerView();
   V.popupAC = new AcView();
+  const historicView = new HistoricView();
+  
+  // Injecter le templateHistoric dans le slot
+  const historicSlot = V.rootPage.querySelector('slot[name="historic"]');
+  if (historicSlot) {
+    historicSlot.replaceWith(historicView.dom());
+  }
+  
   // V.rootPage.zoomOnAC;
   V.rootPage.querySelector('slot[name="svg"]').replaceWith(V.flowers.dom());
   V.attachEvents(V.rootPage);
