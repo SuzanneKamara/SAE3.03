@@ -8,6 +8,7 @@ import { Animation } from "@/lib/animation.js";
 import { User } from "@/data/user.js";
 import Data from "@/data/data.json";
 
+
 // modèle de gestion des données
 let M = {};
 M.progress = null;
@@ -375,6 +376,10 @@ C.activateGlowEffect = function(niveau, competenceId) {
   // Sélectionner SEULEMENT le groupe de cette compétence et ce niveau
   
   const groupComp = V.rootPage.querySelector("#" + compName);
+  
+  // animation vecteurs compétence
+  
+
   if (!groupComp) return;
   
   const groupLevel = groupComp.querySelector("#" + niveau);
@@ -582,7 +587,20 @@ C.handlerImportProof = async function(acId, file) {
   console.log(`✓ Preuve "${file.name}" importée avec succès pour ${acId}`);
 };
 
-
+C.animateVectors = function() {
+  competences.forEach((compId) => {
+    let comp = M.getCompShortName(compId);
+    let compElt = V.rootPage.querySelector("#" + comp);
+    let competenceVectors = compElt.querySelector("#Vector_"+comp);
+          gsap.to(competenceVectors, {
+            opacity: 0.5,
+            duration: 4,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut"
+          });
+        });
+}
 
 C.init = async function () {
   M.loadData();
@@ -1001,6 +1019,106 @@ V.init = function () {
   V.rootPage.querySelector('slot[name="svg"]').replaceWith(V.flowers.dom());
   V.attachEvents(V.rootPage);
   V.renderACNames();
+
+  // Animer le vecteur ConnexionsCompetences avec GSAP
+  setTimeout(() => {
+    const connexionsPath = V.rootPage.querySelector('#ConnexionsCompetences');
+    const svg = V.rootPage.querySelector('svg');
+    
+    if (connexionsPath && svg) {
+      // Créer un dégradé SVG avec les 5 couleurs des compétences
+      let defs = svg.querySelector('defs');
+      if (!defs) {
+        defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        svg.insertBefore(defs, svg.firstChild);
+      }
+
+      // Créer le dégradé linéaire avec les 5 couleurs
+      const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+      gradient.setAttribute('id', 'connexions-gradient');
+      gradient.setAttribute('x1', '0%');
+      gradient.setAttribute('y1', '0%');
+      gradient.setAttribute('x2', '100%');
+      gradient.setAttribute('y2', '100%');
+
+      // Ajouter les 5 couleurs des compétences
+      const colors = [
+        { offset: '0%', color: '#ef4444' },           // Comprendre - Rouge
+        { offset: '16%', color: '#ffffff' },          // Blanc
+        { offset: '20%', color: 'rgb(255, 128, 0)' }, // Concevoir - Orange
+        { offset: '36%', color: '#ffffff' },          // Blanc
+        { offset: '40%', color: 'rgb(255, 204, 0)' }, // Exprimer - Jaune
+        { offset: '56%', color: '#ffffff' },          // Blanc
+        { offset: '60%', color: '#10b981' },          // Développer - Vert
+        { offset: '76%', color: '#ffffff' },          // Blanc
+        { offset: '80%', color: '#3b82f6' }           // Entreprendre - Bleu
+      ];
+
+      colors.forEach(({ offset, color }) => {
+        const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+        stop.setAttribute('offset', offset);
+        stop.setAttribute('stop-color', color);
+        stop.setAttribute('stop-opacity', '1');
+        gradient.appendChild(stop);
+      });
+
+      defs.appendChild(gradient);
+
+      // Appliquer le dégradé au vecteur
+      connexionsPath.setAttribute('stroke', 'url(#connexions-gradient)');
+
+      // Obtenir la longueur du chemin pour l'animation stroke-dasharray
+      const pathLength = connexionsPath.getTotalLength();
+      connexionsPath.setAttribute('stroke-dasharray', pathLength);
+      connexionsPath.setAttribute('stroke-dashoffset', pathLength);
+
+      // Animation pour remplir le chemin progressivement (chargement seul)
+      gsap.fromTo(connexionsPath, 
+        {
+          strokeDashoffset: pathLength
+        },
+        {
+          strokeDashoffset: 0,
+          duration: 8,
+          ease: "none"
+        }
+      );
+
+      // Animation de l'opacité pour l'effet de pulse (chargement seul) - aller retour
+      gsap.to(connexionsPath, {
+        opacity: 0.5,
+        duration: 5,
+        yoyo: true,
+        ease: "sine.inOut"
+      });
+
+      // Effet de glow animé (chargement seul) - aller retour
+      gsap.to(connexionsPath, {
+        filter: 'drop-shadow(0 0 12px rgba(100, 150, 255, 0.9))',
+        duration: 6,
+        yoyo: true,
+        ease: "sine.inOut"
+      });
+
+      // Animer les stops du dégradé pour créer un effet de flux
+      const stops = gradient.querySelectorAll('stop');
+      gsap.to(gradient, {
+        attr: {
+          x1: '100%',
+          y1: '100%',
+          x2: '200%',
+          y2: '200%'
+        },
+        duration: 12,
+        repeat: -1,
+        ease: "none"
+      });
+
+      // Animation d'opacité sur les vecteurs des compétences
+      C.animateVectors();
+    }
+  }, 100);
+
   return V.rootPage;
 };
 
