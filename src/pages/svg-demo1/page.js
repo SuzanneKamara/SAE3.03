@@ -1,5 +1,7 @@
 // imports
-import { FlowerView, AcView, HistoricView } from "@/ui/flower";
+import { HistoricView } from "@/ui/historic";
+import { AcView } from "@/ui/acDetail";
+import { SvgView } from "@/ui/flower";
 import { htmlToDOM } from "@/lib/utils.js";
 import { ProgressStorage } from "@/data/progressStorage.js";
 import template from "./template.html?raw";
@@ -532,8 +534,10 @@ C.handlerExport =  function() {
   C.applyProgressGradients();
   
   // Mettre à jour les glows effects avec les nouvelles données
+  
   competences.forEach((compId) => {
     C.checkLevelCompletion(compId);
+    console.log(compId)
   });
   
   console.log("✓ Données importées avec succès", User.data);
@@ -730,8 +734,8 @@ V.createNotificationElement = function(entry) {
   titleEl.textContent = entry.libelle;
   progressFill.style.width = entry.progress + '%';
   progressPercentage.textContent = entry.progress + '%';
-  competenceBadge.textContent = entry.competence;
-  competenceBadge.style.backgroundColor = entry.color;
+  competenceBadge.textContent = M.getCompShortName(M.getComp(entry.acId));
+  competenceBadge.style.backgroundColor = M.getColor(entry.acId);
 
   return clone;
 };
@@ -1005,7 +1009,7 @@ V.displayProofs = function(acId) {
 
 V.init = function () {
   V.rootPage = htmlToDOM(template);
-  V.flowers = new FlowerView();
+  V.flowers = new SvgView();
   V.popupAC = new AcView();
   V.historicView = new HistoricView();
   
