@@ -1,0 +1,25 @@
+<article class="popup ac-card" id="ACPopup {{code}}">
+  <button class="popup__close">✕</button>
+  <!-- <button class="popup__param"><h1>Modifier l'AC</h1></button> -->
+ 
+  <p class="ac-card__title">{{code}}</p>
+  <p class="ac-card__description">{{libelle}}</p>
+
+  <!-- SLIDER DE PROGRESSION -->
+  <div class="ac-card__progress-container">
+    <label for="progress-slider">Progression: <span class="ac-card__percentage">0%</span></label>
+    <input type="range" id="progress-slider" class="ac-card__slider" min="0" max="100" value="0">
+  </div>
+
+  <div class="ac-card__progress-bar"></div>
+  <div class="ac-card__progress">
+    <!-- <span class="ac-card__percentage">65%</span> -->
+    <!-- <span id="ac-card__progress-visual-indicator"></span> -->
+  </div>
+  <div class="ac-card__actions">
+  <button class="btn-import-proof" id="import-proof-btn">
+     Importer une preuve (PDF)
+  </button>
+  <div class="proofs-list" id="proofs-list"></div>
+</div>
+</article>
