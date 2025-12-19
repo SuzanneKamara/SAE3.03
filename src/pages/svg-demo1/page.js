@@ -803,13 +803,13 @@ V.attachEvents = function (root) {
 
 V.renderACNames = async function () {
   let acCode = "";
-  let ACList = Array.from(V.rootPage.querySelectorAll('[id^="AC"]')).filter(el => !el.id.includes('container'));
+  let ACList = Array.from(V.rootPage.querySelectorAll('[id*="AC"]')).filter(el => !el.id.includes('container'));
   for (let acElement of ACList) {
     acCode = await M.getAcData(acElement.id);
     // console.log("AC element:", acElement.id, "Data:", acCode);
       if (acCode) {
         // Set a data attribute with the code
-        acElement.setAttribute('data-ac-code', acCode.code);
+        // acElement.setAttribute('data-ac-code', acCode.code);
         
         // Récupérer la bounding box de l'élément AC
         const bbox = acElement.getBBox();
